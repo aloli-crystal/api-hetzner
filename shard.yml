@@ -1,0 +1,23 @@
+name: hetzner-api
+version: 0.1.0
+
+description: >
+  Client Crystal pur (stdlib uniquement) pour l'API Hetzner Robot
+  Webservice (serveurs dédiés bare-metal classiques, mensuels — pas
+  Hetzner Cloud). Couvre les endpoints nécessaires au provisioning
+  par beryl : list serveurs, gestion clés SSH (CRUD), bascule en
+  rescue Linux, reset bare-metal (sw/hw/man/power), reverse DNS
+  par IP. Authentification HTTP Basic via web service user dédié.
+  Zéro dépendance externe.
+
+authors:
+  - ALOLI sas <philippe@aloli.fr>
+
+crystal: ">= 1.19.1"
+
+license: MIT
+
+development_dependencies:
+  ameba:
+    github: crystal-ameba/ameba
+    version: "~> 1.6"

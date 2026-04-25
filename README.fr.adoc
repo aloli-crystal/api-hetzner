@@ -1,0 +1,127 @@
+= hetzner-api
+:toc: left
+:source-highlighter: rouge
+:icons: font
+
+[.lead]
+Client Crystal pur (stdlib uniquement) pour l'API
+https://robot.hetzner.com/doc/webservice/en.html[Hetzner Robot Webservice]
+— les serveurs dédiés bare-metal classiques (mensuels), gammes EX/AX/SX.
+
+== À ne PAS confondre
+
+* *Hetzner Cloud API* (`api.hetzner.cloud`) — pour les VPS, autre
+  produit, autre API, SDK officiels Go/Python disponibles côté
+  Hetzner. Ce shard ne couvre PAS Hetzner Cloud.
+* *Hetzner DNS Console API* (`dns.hetzner.com/api`) — gestion de
+  zones DNS publiques, sans rapport avec le bare-metal.
+
+== Périmètre
+
+* `client.servers`   — lister / lire les serveurs du compte.
+* `client.ssh_keys`  — CRUD des clés SSH (identifiant = fingerprint
+                       MD5 colon-separated). `ensure(name, pubkey)`
+                       idempotent.
+* `client.boot`      — bascule en rescue Linux (one-shot).
+* `client.reset`     — reboot bare-metal (sw/hw/man/power/power_long).
+* `client.rdns`      — reverse DNS par IP (POST upsert idempotent).
+
+== Authentification
+
+HTTP Basic via un *web service user* dédié, créé dans le panel
+Robot (Settings → Web service and app settings). Distinct du
+compte Robot principal.
+
+[CAUTION]
+====
+3 échecs d'auth depuis une même IP source bloquent cette IP
+pendant 10 minutes. Le shard ne fait PAS de retry automatique sur
+401.
+====
+
+== Exemple
+
+[source,crystal]
+----
+require "hetzner-api"
+
+client = HetznerApi::Client.new(
+  username: ENV["HETZNER_WS_USER"],
+  password: ENV["HETZNER_WS_PASSWORD"],
+)
+
+# 1. Inscrire une clé SSH (idempotent)
+key = client.ssh_keys.ensure(
+  name: "philippe.aloli.fr",
+  public_key: File.read(ENV["HOME"] + "/.ssh/philippe.aloli.fr.pub"),
+)
+
+# 2. Activer le rescue Linux pour le prochain boot
+client.boot.activate_rescue(
+  server_number: 321,
+  authorized_keys: [key.fingerprint],
+)
+
+# 3. Hardware reset → boot dans le rescue
+client.reset.execute(
+  server_number: 321,
+  type: HetznerApi::Endpoints::ResetType::HW,
+)
+
+# 4. Plus tard, après l'install : reboot disque (rescue auto-désactivé)
+client.reset.execute(
+  server_number: 321,
+  type: HetznerApi::Endpoints::ResetType::HW,
+)
+
+# 5. Poser le reverse DNS
+client.rdns.set(ip: "1.2.3.4", ptr: "myhost.aloli.fr")
+----
+
+== Particularité Hetzner : rescue one-shot
+
+Une fois activé, le rescue Linux est chargé au prochain boot, puis
+*automatiquement désactivé* côté backend. Le boot suivant revient
+sur le disque normalement. Pas d'équivalent à `boot_normal`
+(Dedibox) ou `boot_type=Normal` (Scaleway) — ce shard n'expose pas
+de méthode pour « quitter le rescue », c'est inutile.
+
+== Rate limiting
+
+[cols="2,1", options="header"]
+|===
+| Endpoint | Limite par heure
+| `POST /reset/{n}` | 50
+| `POST/PUT/DELETE /key` | 200
+| `POST /boot/{n}/rescue` | 500
+| Lectures (GET) | 500
+|===
+
+Le shard lève `HetznerApi::RateLimited` (sous-classe d'`Error`)
+avec les champs `max_request` et `interval` extraits du body
+d'erreur Hetzner.
+
+== Hiérarchie d'exceptions
+
+* `HetznerApi::Error` — base de toutes les erreurs du shard
+* `HetznerApi::AuthenticationError` — HTTP 401
+* `HetznerApi::RateLimited` — HTTP 403 + `RATE_LIMIT_EXCEEDED`
+* `HetznerApi::NotFound` — HTTP 404
+* `HetznerApi::Conflict` — HTTP 409 (ex: `KEY_ALREADY_EXISTS`)
+* `HetznerApi::MaintenanceMode` — HTTP 503
+* `HetznerApi::ApiError` — autre 4xx/5xx (avec `http_status` et `error_code`)
+
+== Installation
+
+[source,yaml]
+----
+# shard.yml
+dependencies:
+  hetzner-api:
+    github: aloli-crystal/crystal-api-hetzner
+    branch: production
+----
+
+== Licence
+
+MIT © ALOLI sas. Voir link:LICENSE[LICENSE].

@@ -1,0 +1,82 @@
+= Changelog
+:toc: left
+:toclevels: 2
+
+Toutes les modifications notables de ce projet sont documentées dans ce fichier.
+
+Le format s'inspire de https://keepachangelog.com/fr/1.1.0/[Keep a Changelog]
+et ce projet suit https://semver.org/lang/fr/[Semantic Versioning].
+
+== [Non publié]
+
+== 0.1.0 (25 avril 2026)
+
+=== Ajouté
+
+==== Fondations
+
+* Squelette initial (`shard.yml`, LICENSE MIT, README FR, ARCHITECTURE
+  à venir).
+* Convention Aloli : branche par défaut `production`, messages de
+  commit en français, licence MIT, auteurs `ALOLI sas`.
+
+==== Cœur du client
+
+* `HetznerApi::Client` — auth HTTP Basic via *web service user*
+  dédié (créé dans le panel Robot, distinct du compte principal).
+* URL de base unique `https://robot-ws.your-server.de` — pas de
+  routage par zone.
+* Transport HTTP abstrait `HetznerApi::HttpTransport` avec
+  implémentation `DefaultHttpTransport` (stdlib `HTTP::Client`),
+  permet l'injection d'un double en test.
+* Méthodes `call(method, path, query, body_form)` (Hash mono-valué)
+  et `call_raw(method, path, query, body, content_type)` (body
+  string déjà encodé pour les params multi-valués `authorized_key[]`).
+
+==== Endpoints
+
+* *Servers* (`/server`) : `list`, `get(server_number)`. Identifiant
+  canonique = `server_number` (entier court).
+* *SSH keys* (`/key`) : `list`, `get`, `create`, `rename`, `delete`,
+  `ensure(name, public_key)` idempotent (compare la clé publique
+  par base64 plutôt que par fingerprint, pour ne pas refaire un
+  POST si déjà enregistrée).
+* *Boot* (`/boot/{n}/rescue`) : `activate_rescue(server_number,
+  os, authorized_keys, keyboard)`, `rescue_status`,
+  `deactivate_rescue`, `last_rescue`. Le rescue Hetzner est
+  *one-shot* — pas de méthode « quitter le rescue », c'est
+  automatique au prochain boot.
+* *Reset* (`/reset/{n}`) : `types_for(server_number)`,
+  `execute(server_number, type)`. Enum `ResetType` (`SW`, `HW`,
+  `MAN`, `POWER`, `PowerLong`) avec `to_api` / `from_api`.
+* *Rdns* (`/rdns/{ip}`) : `list`, `get`, `set` (POST upsert
+  idempotent), `delete`.
+
+==== Hiérarchie d'exceptions
+
+* `Error` (base), `AuthenticationError` (401), `RateLimited` (403
+  + `RATE_LIMIT_EXCEEDED`, expose `max_request` et `interval`),
+  `NotFound` (404), `Conflict` (409, ex `KEY_ALREADY_EXISTS`),
+  `MaintenanceMode` (503), `ApiError` (autre 4xx/5xx avec
+  `http_status` et `error_code`).
+
+==== Tests
+
+* 30 specs couvrant : auth Basic, dispatch d'erreurs HTTP,
+  endpoints `servers`, `ssh_keys` (incluant `ensure` idempotent),
+  `boot` (incluant la sérialisation multi-valued
+  `authorized_key[]`), `reset` (incluant l'enum), `rdns`
+  (incluant le POST upsert).
+* `FakeTransport` pour stuber les requêtes HTTP, sans dépendance
+  externe.
+
+=== Limitations connues
+
+* Pas encore d'endpoint `/order/*` (achat de serveur via API).
+  L'opérateur achète son premier serveur via le panel web ; les
+  achats ultérieurs scriptables seront ajoutés dans une version
+  suivante.
+* Pas encore de support des autres modes de boot (`/boot/{n}/linux`
+  pour l'install d'un OS donné, `/boot/{n}/vnc`, `/boot/{n}/windows`,
+  etc.). beryl utilise uniquement le rescue.
+* Pas encore de gestion des sub-accounts FTP / Storage Box.
