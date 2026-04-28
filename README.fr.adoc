@@ -8,6 +8,24 @@ Client Crystal pur (stdlib uniquement) pour l'API
 https://robot.hetzner.com/doc/webservice/en.html[Hetzner Robot Webservice]
 — les serveurs dédiés bare-metal classiques (mensuels), gammes EX/AX/SX.
 
+[NOTE]
+.Note de l'auteur (Aloli, 26 avril 2026)
+====
+Ce shard a été écrit pour intégrer Hetzner à
+https://github.com/aloli-crystal/crystal-beryl[beryl]. Il est
+techniquement complet (30 specs verts, REST/JSON, hiérarchie
+d'erreurs typées) mais *n'a pas été validé sur un compte Hetzner
+en production*.
+
+Raison : Hetzner exige une copie de pièce d'identité à l'inscription
+— politique disproportionnée pour de la location bare-metal, qu'Aloli
+a refusée. Le shard reste publié sous licence MIT pour la communauté
+Crystal qui voudrait l'utiliser sans ce souci.
+
+Retours utilisateurs bienvenus (issues, PR), notamment sur le flow
+réel `prepare_rescue` → `reset(hw)` → boot rescue.
+====
+
 == À ne PAS confondre
 
 * *Hetzner Cloud API* (`api.hetzner.cloud`) — pour les VPS, autre
