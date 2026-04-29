@@ -1,4 +1,4 @@
-= hetzner-api
+= api-hetzner
 :toc: left
 :source-highlighter: rouge
 :icons: font
@@ -12,7 +12,7 @@ https://robot.hetzner.com/doc/webservice/en.html[Hetzner Robot Webservice]
 .Note de l'auteur (Aloli, 26 avril 2026)
 ====
 Ce shard a été écrit pour intégrer Hetzner à
-https://github.com/aloli-crystal/crystal-beryl[beryl]. Il est
+https://github.com/aloli-crystal/beryl[beryl]. Il est
 techniquement complet (30 specs verts, REST/JSON, hiérarchie
 d'erreurs typées) mais *n'a pas été validé sur un compte Hetzner
 en production*.
@@ -61,7 +61,7 @@ pendant 10 minutes. Le shard ne fait PAS de retry automatique sur
 
 [source,crystal]
 ----
-require "hetzner-api"
+require "api-hetzner"
 
 client = HetznerApi::Client.new(
   username: ENV["HETZNER_WS_USER"],
@@ -135,8 +135,8 @@ d'erreur Hetzner.
 ----
 # shard.yml
 dependencies:
-  hetzner-api:
-    github: aloli-crystal/crystal-api-hetzner
+  api-hetzner:
+    github: aloli-crystal/api-hetzner
     branch: production
 ----
 
