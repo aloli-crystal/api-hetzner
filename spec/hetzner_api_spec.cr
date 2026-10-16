@@ -2,7 +2,7 @@ require "./spec_helper"
 
 describe HetznerApi do
   it "expose une version" do
-    HetznerApi::VERSION.should eq("0.1.3")
+    HetznerApi::VERSION.should eq("0.1.4")
   end
 end
 

@@ -136,7 +136,7 @@ module HetznerApi
 
     private def handle_response(status : Int32, body : String) : JSON::Any?
       # 204 No Content / 200 sans body
-      return nil if body.empty?
+      return if body.empty?
 
       parsed = begin
         JSON.parse(body)
