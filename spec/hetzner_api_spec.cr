@@ -1,8 +1,10 @@
 require "./spec_helper"
+require "yaml"
 
 describe HetznerApi do
   it "expose une version" do
-    HetznerApi::VERSION.should eq("0.1.4")
+    yml = YAML.parse(File.read(File.join(__DIR__, "..", "shard.yml")))
+    HetznerApi::VERSION.should eq(yml["version"].as_s)
   end
 end
 

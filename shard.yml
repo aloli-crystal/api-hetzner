@@ -1,5 +1,5 @@
 name: api-hetzner
-version: 0.1.4
+version: 0.1.5
 
 description: >
   Client Crystal pur (stdlib uniquement) pour l'API Hetzner Robot
